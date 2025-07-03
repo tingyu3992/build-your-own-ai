@@ -1,0 +1,40 @@
+import numpy as np
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+
+# 載入嵌入與標題
+embeddings = np.load('movie_embeddings.npy')
+titles = pd.read_csv('movie_titles.csv')['title'].tolist()
+
+def recommend_top_k(query_embedding, embeddings, titles, k=5):
+    """
+    根據輸入嵌入向量計算相似度並回傳前 k 個最相似項目
+
+    參數：
+        query_embedding (np.array): 查詢向量 (1, 384)
+        embeddings (np.array): 所有項目的嵌入 (N, 384)
+        titles (List[str]): 對應的項目標題
+        k (int): 要回傳的相似項目數量
+
+    回傳：
+        List[Tuple[標題, 相似度]]
+    """
+    # 計算相似度（1 x N 向量）
+    sims = cosine_similarity([query_embedding], embeddings)[0]
+
+    # 取得相似度排序前 K 名索引
+    top_k_indices = np.argsort(sims)[::-1][:k]
+
+    # 回傳標題與相似度
+    return [(titles[i], round(sims[i], 4)) for i in top_k_indices]
+
+# 範例測試：使用資料集中第 10 筆劇情做為查詢向量
+query_index = 10
+query_vector = embeddings[query_index]
+query_title = titles[query_index]
+
+print(f"\n🎯 根據電影《{query_title}》推薦：")
+results = recommend_top_k(query_vector, embeddings, titles)
+
+for i, (title, score) in enumerate(results, 1):
+    print(f"{i}. {title} (相似度: {score})")
