@@ -1,0 +1,41 @@
+import numpy as np
+import pandas as pd
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# 載入資料
+def load_data():
+    embeddings = np.load('movie_embeddings.npy')
+    titles = pd.read_csv('movie_titles.csv')['title'].tolist()
+    return embeddings, titles
+
+# 取得輸入文字的嵌入
+def get_text_embedding(text, model):
+    return model.encode([text])[0]
+
+# 推薦邏輯
+def recommend_top_k(query_vector, embeddings, titles, k=5):
+    sims = cosine_similarity([query_vector], embeddings)[0]
+    top_k = np.argsort(sims)[::-1][:k]
+    return [(titles[i], round(sims[i], 4)) for i in top_k]
+
+# 主流程
+def main():
+    print("🎬 歡迎使用電影推薦系統")
+    embeddings, titles = load_data()
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+
+    while True:
+        user_input = input("\n請輸入你喜歡的電影描述（或輸入 'exit' 離開）：\n> ")
+        if user_input.lower() == 'exit':
+            break
+
+        query_vector = get_text_embedding(user_input, model)
+        results = recommend_top_k(query_vector, embeddings, titles)
+
+        print("\n🎯 推薦結果：")
+        for i, (title, score) in enumerate(results, 1):
+            print(f"{i}. {title} (相似度: {score})")
+
+if __name__ == "__main__":
+    main()
