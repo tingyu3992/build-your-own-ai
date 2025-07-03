@@ -1,0 +1,23 @@
+import pandas as pd
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+# 載入模型
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# 載入資料集（CSV 檔須含有 'plot' 欄位）
+df = pd.read_csv('movie_plots.csv')
+
+# 取前 50 筆資料（或全數，視需求）
+texts = df['plot'].dropna().head(50).tolist()
+
+# 產生嵌入向量（每個是 384 維）
+embeddings = model.encode(texts, show_progress_bar=True)
+
+# 儲存為 numpy 陣列檔案（.npy）
+np.save('movie_embeddings.npy', embeddings)
+
+# 儲存對應的標題，方便查詢
+df['title'].head(50).to_csv('movie_titles.csv', index=False)
+
+print(f"✅ 成功將 {len(embeddings)} 筆劇情嵌入為向量並儲存為 'movie_embeddings.npy'")
